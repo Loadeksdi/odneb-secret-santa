@@ -84,6 +84,9 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
             }
         });
     } else if (interaction.data.customId === "leave") {
+        if(!participants.has(interaction.user.id)) {
+            return;
+        }
         participants.delete(interaction.user.id);
         await bot.helpers.sendInteractionResponse(interaction.id, interaction.token, {
             type: 4,
