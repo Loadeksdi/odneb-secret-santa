@@ -31,6 +31,38 @@ const sendMessageToMatches = async (matches: Map<BigInt, BigInt>) => {
     }
 }
 
+const updateMessage = async () => {
+    await bot.helpers.editMessage(channel, participationMessage.id, {
+        embeds: [
+            {
+                title: "🎄The Odneb secret santa is here!🎄",
+                description: "Click on the Join! 🎁 button to participate to the secret santa! You will be matched with another participant and will have to send them a gift!",
+                url: "https://github.com/Loadeksdi/odneb-secret-santa",
+                color: 0xbb2528,
+                fields: Array.from(participants).map((participant, index) => ({ name: `Participant ${index + 1}`, value: `<@${participant.toString()}>`, inline: true }))
+            }
+        ],
+        components: [
+            {
+                type: MessageComponentTypes.ActionRow,
+                components: [
+                    {
+                        customId: "join",
+                        type: MessageComponentTypes.Button,
+                        label: "Join! 🎁",
+                        style: ButtonStyles.Success,
+                    },
+                    {
+                        customId: "leave",
+                        type: MessageComponentTypes.Button,
+                        label: "Nevermind! 🎄",
+                        style: ButtonStyles.Danger,
+                    },
+                ],
+            },
+        ],
+    });
+}
 bot.events.ready = async function (bot): Promise<void> {
     console.log("Successfully connected to gateway");
     await bot.helpers.editBotStatus({
@@ -78,22 +110,18 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
         }
         participants.add(interaction.user.id);
         await bot.helpers.sendInteractionResponse(interaction.id, interaction.token, {
-            type: 4,
-            data: {
-                content: `<@${interaction.user.id}> joined the secret santa! 🧑‍🎄`,
-            }
+            type: 4
         });
+        await updateMessage();
     } else if (interaction.data.customId === "leave") {
-        if(!participants.has(interaction.user.id)) {
+        if (!participants.has(interaction.user.id)) {
             return;
         }
         participants.delete(interaction.user.id);
         await bot.helpers.sendInteractionResponse(interaction.id, interaction.token, {
-            type: 4,
-            data: {
-                content: `<@${interaction.user.id}> left the secret santa! 🧑‍🎄`,
-            }
+            type: 4
         });
+        await updateMessage();
     }
     if (interaction.data.name === "start" && interaction.user.id as BigString == Deno.env.get("DISCORD_OWNER")) {
         if (participants.size < 2) {
@@ -113,7 +141,7 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
                 content: "Matches have been generated! 🎁",
             }
         });
-        await sendMessageToMatches(matches);  
+        await sendMessageToMatches(matches);
     }
 };
 
