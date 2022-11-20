@@ -7,18 +7,20 @@ let participationMessage: Message;
 const channel = Deno.env.get("DISCORD_CHANNEL") as BigString;
 const guild = Deno.env.get("DISCORD_GUILD") as BigString;
 
-const createMatches = () => {
+const createMatches = (): Map<BigInt, BigInt> => {
     const participantsArray = Array.from(participants);
     const participantsCopy = Array.from(participants);
     const matches: Map<BigInt, BigInt> = new Map();
-    for (const participant of participantsArray) {
+    let i = 0;
+    while (i < participants.size) {
+        const participant = participantsArray[i];
         const match = participantsCopy[Math.floor(Math.random() * participantsCopy.length)];
         if (match == participant) {
-            participantsCopy.splice(participantsCopy.indexOf(match), 1);
             continue;
         }
         matches.set(participant, match);
         participantsCopy.splice(participantsCopy.indexOf(match), 1);
+        i = matches.size;
     }
     return matches;
 }
@@ -41,7 +43,11 @@ const updateMessage = async () => {
                 description: "Click on the Join! 🎁 button to participate to the secret santa! You will be matched with another participant and will have to send them a gift!",
                 url: "https://github.com/Loadeksdi/odneb-secret-santa",
                 color: 0xbb2528,
-                fields: Array.from(participants).map((participant, index) => ({ name: `Participant ${index + 1}`, value: `<@${participant.toString()}>`, inline: true }))
+                fields: Array.from(participants).map((participant, index) => ({ name: `Participant ${index + 1}`, value: `<@${participant.toString()}>`, inline: true })),
+                footer: {
+                    text: "Christmas icons created by Freepik - Flaticon - https://www.flaticon.com/free-icons/christmas",
+                    iconUrl: "https://cdn-icons-png.flaticon.com/512/621/621873.png",
+                }
             }
         ],
         components: [
@@ -77,7 +83,11 @@ bot.events.ready = async function (bot): Promise<void> {
                 title: "🎄The Odneb secret santa is here!🎄",
                 description: "Click on the Join! 🎁 button to participate to the secret santa! You will be matched with another participant and will have to send them a gift!",
                 url: "https://github.com/Loadeksdi/odneb-secret-santa",
-                color: 0xbb2528
+                color: 0xbb2528,
+                footer: {
+                    text: "Christmas icons created by Freepik - Flaticon",
+                    iconUrl: "https://cdn-icons-png.flaticon.com/512/621/621873.png",
+                }
             }
         ],
         components: [
@@ -110,7 +120,7 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
         if (participants.has(interaction.user.id)) {
             return;
         }
-        if(!interaction.member){
+        if (!interaction.member) {
             return;
         }
         participants.add(interaction.member.id);
