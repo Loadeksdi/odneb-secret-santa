@@ -5,6 +5,7 @@ import { bot } from "./discord.ts";
 const participants: Set<BigInt> = new Set();
 let participationMessage: Message;
 const channel = Deno.env.get("DISCORD_CHANNEL") as BigString;
+const guild = Deno.env.get("DISCORD_GUILD") as BigString;
 
 const createMatches = () => {
     const participantsArray = Array.from(participants);
@@ -12,7 +13,7 @@ const createMatches = () => {
     const matches: Map<BigInt, BigInt> = new Map();
     for (const participant of participantsArray) {
         const match = participantsCopy[Math.floor(Math.random() * participantsCopy.length)];
-        if (match === participant) {
+        if (match == participant) {
             participantsCopy.splice(participantsCopy.indexOf(match), 1);
             continue;
         }
@@ -24,8 +25,9 @@ const createMatches = () => {
 
 const sendMessageToMatches = async (matches: Map<BigInt, BigInt>) => {
     for (const [participant, match] of matches) {
-        const matchedUser = await bot.helpers.getMember(channel, match as BigString);
-        await bot.helpers.sendMessage(participant as BigString, {
+        const matchedUser = await bot.helpers.getMember(guild, match as BigString);
+        const dmChannel = await bot.helpers.getDmChannel(participant as BigString);
+        await bot.helpers.sendMessage(dmChannel.id, {
             content: `You have been matched with ${matchedUser.user?.username}, you better send them a nice gift! 🎁`,
         });
     }
@@ -108,7 +110,10 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
         if (participants.has(interaction.user.id)) {
             return;
         }
-        participants.add(interaction.user.id);
+        if(!interaction.member){
+            return;
+        }
+        participants.add(interaction.member.id);
         await bot.helpers.sendInteractionResponse(interaction.id, interaction.token, {
             type: 4
         });
@@ -148,6 +153,6 @@ bot.events.interactionCreate = async (_, interaction: Interaction) => {
 bot.helpers.createGuildApplicationCommand({
     name: "start",
     description: "Start the secret santa matching 🧑‍🎄"
-}, Deno.env.get("DISCORD_GUILD") as BigString);
+}, guild);
 
 await startBot(bot);
